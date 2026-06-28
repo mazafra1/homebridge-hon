@@ -1,0 +1,31 @@
+import { PlatformAccessory, CharacteristicValue, Logger, API } from 'homebridge';
+import { HonApiClient } from '../honApi';
+export declare class AcAccessory {
+    private readonly accessory;
+    private readonly api;
+    private readonly email;
+    private readonly password;
+    private readonly hbApi;
+    private service;
+    private readonly Characteristic;
+    private readonly log;
+    private cache;
+    private cacheTime;
+    private readonly CACHE_TTL;
+    constructor(accessory: PlatformAccessory, api: HonApiClient, email: string, password: string, hbApi: API, log: Logger);
+    private getStatus;
+    private send;
+    handleActiveGet(): Promise<CharacteristicValue>;
+    handleActiveSet(value: CharacteristicValue): Promise<void>;
+    handleCurrentStateGet(): Promise<CharacteristicValue>;
+    handleTargetStateGet(): Promise<CharacteristicValue>;
+    handleTargetStateSet(value: CharacteristicValue): Promise<void>;
+    handleCurrentTempGet(): Promise<CharacteristicValue>;
+    handleTargetTempGet(): Promise<CharacteristicValue>;
+    handleTargetTempSet(value: CharacteristicValue): Promise<void>;
+    handleFanSpeedGet(): Promise<CharacteristicValue>;
+    handleFanSpeedSet(value: CharacteristicValue): Promise<void>;
+    handleSwingGet(): Promise<CharacteristicValue>;
+    handleSwingSet(value: CharacteristicValue): Promise<void>;
+    refreshCharacteristics(): Promise<void>;
+}
