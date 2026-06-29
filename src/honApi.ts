@@ -4,25 +4,29 @@ import { HON_API_URL, HON_AUTH_URL } from './settings';
 
 export interface HonAppliance {
   applianceId: string;
-  applianceTypeName: string;  // 'AC', 'WM', etc.
+  applianceTypeName: string;
   nickName: string;
   modelName: string;
   macAddress: string;
 }
 
 export interface AcStatus {
-  onOffStatus: string;          // '0' = off, '1' = on
-  operationMode: string;        // '0'=auto '1'=cool '2'=dry '3'=fan '4'=heat
-  tempSel: string;              // target temperature (°C as string)
-  tempIndoor: string;           // current indoor temperature
-  windSpeed: string;            // fan speed: '1'=low '2'=medium '3'=high '5'=auto
+  onOffStatus: string;
+  operationMode: string;
+  tempSel: string;
+  tempIndoor: string;
+  windSpeed: string;
   windDirectionHorizontal: string;
   windDirectionVertical: string;
-  silentSleepStatus: string;    // '0'=off '1'=on
-  rapidModeStatus: string;      // '0'=off '1'=on (turbo)
-  ecoModeStatus: string;        // '0'=off '1'=on
+  silentSleepStatus: string;
+  rapidModeStatus: string;
+  ecoModeStatus: string;
   selfCleanStatus: string;
 }
+
+const CLIENT_ID = '3MVG9QDx8IX8nP5T2Ha8ofvlmjLZl5L_gvfbT9.HJvpHGKoAS_dcMN8LYpTSYeVFCraUnV.2Ag1Ki7m4znVO6';
+const APP_VERSION = '2.4.7';
+const USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15';
 
 export class HonApiClient {
   private http: AxiosInstance;
@@ -35,7 +39,10 @@ export class HonApiClient {
     this.log = log;
     this.http = axios.create({
       timeout: 15000,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': USER_AGENT,
+      },
     });
   }
 
@@ -44,45 +51,68 @@ export class HonApiClient {
   async login(email: string, password: string): Promise<void> {
     this.log.debug('Logging in to hOn cloud...');
     try {
-      // Step 1: get login page & CSRF token
+      // Step 1: get login page
       const loginPageResp = await this.http.get(
         `${HON_AUTH_URL}/auth/realms/hon/protocol/openid-connect/auth`,
         {
           params: {
-            client_id: 'hon-ios',
+            client_id: CLIENT_ID,
             response_type: 'code',
             redirect_uri: 'hon://oauth2/callback',
             scope: 'openid',
+            state: Math.random().toString(36).substring(2),
           },
+          headers: { 'User-Agent': USER_AGENT },
           maxRedirects: 5,
         },
       );
 
-      // Extract action URL from login form HTML
-      const actionMatch = loginPageResp.data.match(/action="([^"]+)"/);
-      if (!actionMatch) {
-        throw new Error('Could not find login form action URL');
+      this.log.debug('Login page snippet:', String(loginPageResp.data).substring(0, 500));
+
+      // Extract action URL from login form — try multiple patterns
+      let actionUrl: string | null = null;
+
+      // Pattern 1: action="..."
+      const m1 = String(loginPageResp.data).match(/action="([^"]+)"/);
+      if (m1) actionUrl = m1[1].replace(/&amp;/g, '&');
+
+      // Pattern 2: action='...'
+      if (!actionUrl) {
+        const m2 = String(loginPageResp.data).match(/action='([^']+)'/);
+        if (m2) actionUrl = m2[1].replace(/&amp;/g, '&');
       }
-      const actionUrl = actionMatch[1].replace(/&amp;/g, '&');
+
+      if (!actionUrl) {
+        throw new Error('Could not find login form action URL. Check debug logs for page HTML.');
+      }
+
+      this.log.debug('Form action URL:', actionUrl);
 
       // Step 2: submit credentials
-      const formData = new URLSearchParams({
-        username: email,
-        password: password,
-        credentialId: '',
-      });
+      const submitResp = await this.http.post(
+        actionUrl,
+        new URLSearchParams({
+          username: email,
+          password: password,
+          credentialId: '',
+        }).toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': USER_AGENT,
+          },
+          maxRedirects: 0,
+          validateStatus: (s) => s === 302 || s === 200,
+        },
+      );
 
-      const submitResp = await this.http.post(actionUrl, formData.toString(), {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        maxRedirects: 0,
-        validateStatus: (s) => s === 302 || s === 200,
-      });
-
-      // Step 3: extract auth code from redirect location
+      // Step 3: extract auth code from redirect
       const location = submitResp.headers['location'] || '';
+      this.log.debug('Redirect location:', location);
+
       const codeMatch = location.match(/[?&]code=([^&]+)/);
       if (!codeMatch) {
-        throw new Error('Login failed: no auth code in redirect. Check credentials.');
+        throw new Error('Login failed: no auth code in redirect. Check your hOn credentials.');
       }
       const authCode = codeMatch[1];
 
@@ -91,11 +121,16 @@ export class HonApiClient {
         `${HON_AUTH_URL}/auth/realms/hon/protocol/openid-connect/token`,
         new URLSearchParams({
           grant_type: 'authorization_code',
-          client_id: 'hon-ios',
+          client_id: CLIENT_ID,
           code: authCode,
           redirect_uri: 'hon://oauth2/callback',
         }).toString(),
-        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': USER_AGENT,
+          },
+        },
       );
 
       this.token = tokenResp.data.access_token;
@@ -118,7 +153,7 @@ export class HonApiClient {
           `${HON_AUTH_URL}/auth/realms/hon/protocol/openid-connect/token`,
           new URLSearchParams({
             grant_type: 'refresh_token',
-            client_id: 'hon-ios',
+            client_id: CLIENT_ID,
             refresh_token: this.refreshToken,
           }).toString(),
           { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
@@ -140,7 +175,11 @@ export class HonApiClient {
   async getAppliances(email: string, password: string): Promise<HonAppliance[]> {
     await this.ensureToken(email, password);
     const resp = await this.http.get(`${HON_API_URL}/api/commands/v1/appliances`, {
-      headers: { Authorization: `Bearer ${this.token}` },
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'x-hon-appversion': APP_VERSION,
+        'User-Agent': USER_AGENT,
+      },
     });
     return resp.data.payload?.appliances ?? [];
   }
@@ -155,7 +194,13 @@ export class HonApiClient {
     await this.ensureToken(email, password);
     const resp = await this.http.get(
       `${HON_API_URL}/api/commands/v1/appliances/${applianceId}/context`,
-      { headers: { Authorization: `Bearer ${this.token}` } },
+      {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          'x-hon-appversion': APP_VERSION,
+          'User-Agent': USER_AGENT,
+        },
+      },
     );
     const params = resp.data.payload?.shadow?.parameters ?? {};
     return params as AcStatus;
@@ -182,7 +227,13 @@ export class HonApiClient {
           programRules: {},
         },
       },
-      { headers: { Authorization: `Bearer ${this.token}` } },
+      {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          'x-hon-appversion': APP_VERSION,
+          'User-Agent': USER_AGENT,
+        },
+      },
     );
     this.log.debug(`AC command sent to ${applianceId}:`, JSON.stringify(params));
   }

@@ -1,7 +1,7 @@
 export declare const PLATFORM_NAME = "HonPlatform";
 export declare const PLUGIN_NAME = "homebridge-hon";
-export declare const HON_API_URL = "https://api.hon.haier.com";
-export declare const HON_AUTH_URL = "https://account.hon.haier.com";
+export declare const HON_API_URL = "https://api-iot.he.services";
+export declare const HON_AUTH_URL = "https://account2.hon-smarthome.com";
 export declare const DEVICE_TYPES: {
     readonly AC: "AC";
     readonly WM: "WM";
