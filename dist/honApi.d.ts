@@ -21,13 +21,21 @@ export interface AcStatus {
 }
 export declare class HonApiClient {
     private http;
-    private token;
-    private refreshToken;
+    private auth;
     private tokenExpiry;
     private readonly log;
     constructor(log: Logger);
+    private introduce;
+    private handleRedirects;
+    private manualRedirect;
+    private loadLoginPage;
     login(email: string, password: string): Promise<void>;
+    private getToken;
+    private parseTokenData;
+    private apiAuth;
+    private refresh;
     private ensureToken;
+    private get apiHeaders();
     getAppliances(email: string, password: string): Promise<HonAppliance[]>;
     getAcStatus(applianceId: string, email: string, password: string): Promise<AcStatus>;
     sendAcCommand(applianceId: string, params: Partial<AcStatus>, email: string, password: string): Promise<void>;
