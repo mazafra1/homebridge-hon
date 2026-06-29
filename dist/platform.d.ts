@@ -14,4 +14,5 @@ export declare class HonPlatform implements DynamicPlatformPlugin {
     private discoverDevices;
     private setupAcAccessory;
     private startPolling;
+    private pollAccessories;
 }

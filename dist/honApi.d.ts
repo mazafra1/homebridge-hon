@@ -20,18 +20,21 @@ export interface AcStatus {
     selfCleanStatus: string;
 }
 export declare class HonApiClient {
-    private http;
+    private readonly http;
     private auth;
     private tokenExpiry;
     private readonly log;
     constructor(log: Logger);
+    private clearAuth;
+    private setTokenExpiry;
+    private applyTokenBundle;
+    private parseTokenData;
     private introduce;
-    private handleRedirects;
     private manualRedirect;
+    private handleRedirects;
     private loadLoginPage;
     login(email: string, password: string): Promise<void>;
     private getToken;
-    private parseTokenData;
     private apiAuth;
     private refresh;
     private ensureToken;

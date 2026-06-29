@@ -61,7 +61,7 @@ Una vez configurado, cada unidad de AC aparece en HomeKit como un accesorio **He
 ## Desarrollo local
 
 ```bash
-git clone https://github.com/tu-usuario/homebridge-hon
+git clone https://github.com/mazafra1/homebridge-hon
 cd homebridge-hon
 npm install
 npm run build

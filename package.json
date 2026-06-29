@@ -1,38 +1,105 @@
 {
   "name": "homebridge-hon",
   "version": "1.1.0",
-  "description": "Homebridge plugin for Haier/Candy/Hoover appliances via hOn cloud (Air Conditioner support)",
+  "description": "Homebridge plugin for Haier, Candy and Hoover appliances via hOn cloud",
+  "displayName": "Homebridge hOn",
   "license": "MIT",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "author": "Miguel A. Zafra",
+  "homepage": "https://github.com/mazafra1/homebridge-hon",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mazafra1/homebridge-hon.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mazafra1/homebridge-hon/issues"
+  },
   "keywords": [
     "homebridge-plugin",
-    "haier",
+    "homebridge",
+    "homekit",
     "hon",
+    "haier",
     "candy",
     "hoover",
-    "air-conditioner",
-    "homekit"
+    "air-conditioner"
   ],
   "engines": {
     "node": ">=18.0.0",
     "homebridge": ">=1.6.0"
   },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
-    "watch": "nodemon",
-    "lint": "eslint src/",
-    "prepublishOnly": "npm run build"
+    "clean": "rm -rf dist",
+    "watch": "tsc -w",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "axios-cookiejar-support": "^7.0.0",
+    "tough-cookie": "^6.0.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "homebridge": "^1.6.0",
-    "nodemon": "^3.0.0",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "homebridge": ">=1.6.0"
+  },
+  "homebridge": {
+    "pluginAlias": "homebridge-hon",
+    "pluginType": "platform",
+    "singular": true,
+    "platforms": [
+      {
+        "name": "HonPlatform",
+        "platform": "HonPlatform",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "platform": {
+              "title": "Platform",
+              "type": "string",
+              "default": "HonPlatform",
+              "required": true
+            },
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "default": "hOn"
+            },
+            "email": {
+              "title": "Email",
+              "type": "string"
+            },
+            "password": {
+              "title": "Password",
+              "type": "string",
+              "format": "password"
+            },
+            "pollingInterval": {
+              "title": "Polling interval (seconds)",
+              "type": "integer",
+              "default": 30,
+              "minimum": 10,
+              "maximum": 300
+            }
+          },
+          "required": [
+            "platform",
+            "email",
+            "password"
+          ]
+        }
+      }
+    ]
   }
 }
