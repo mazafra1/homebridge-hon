@@ -138,6 +138,13 @@ export class HonApiClient {
   private async handleRedirects(loginUrl: string): Promise<string> {
     const redirect1 = await this.manualRedirect(loginUrl);
     this.log.debug('redirect1:', redirect1);
+    
+    // If ProgressiveLogin appears, bypass it and use the original URL
+    if (redirect1.includes('ProgressiveLogin')) {
+      this.log.debug('ProgressiveLogin detected, bypassing...');
+      return `${loginUrl}&System=IoT_Mobile_App&RegistrationSubChannel=hOn`;
+    }
+    
     const redirect2 = await this.manualRedirect(redirect1);
     this.log.debug('redirect2:', redirect2);
     return `${redirect2}&System=IoT_Mobile_App&RegistrationSubChannel=hOn`;
