@@ -1,6 +1,6 @@
 {
   "name": "homebridge-hon",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Homebridge plugin for Haier, Candy and Hoover appliances via hOn cloud",
   "displayName": "Homebridge hOn",
   "license": "MIT",
